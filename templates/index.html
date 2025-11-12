@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <title>Sistema de Votación</title>
+    <style>
+        /* ... (todo el <style> se queda igual) ... */
+        /* Añadimos un estilo para el gráfico */
+        .contenedor-grafico { max-height: 400px; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="contenedor">
+        <h1>{{ titulo_eleccion }}</h1>
+
+        <div class="paso">
+            <h2>Resultados en Vivo</h2>
+            <button id="btn-actualizar-grafico">Actualizar Gráfico</button>
+            <div class="contenedor-grafico">
+                <canvas id="grafico-votacion"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ... (todo el JavaScript de antes se queda igual) ...
+        // (btnRegistrar, btnVotar, inputCorreo, etc.)
+        
+        // --- CÓDIGO NUEVO PARA EL GRÁFICO ---
+        
+        const btnActualizarGrafico = document.getElementById('btn-actualizar-grafico');
+        const ctx = document.getElementById('grafico-votacion').getContext('2d');
+        let miGrafico; // Variable para guardar nuestro gráfico
+
+        // Función para pedir los datos al backend y dibujar
+        async function dibujarGrafico() {
+            // Pedimos los datos a la nueva API
+            const respuesta = await fetch('/api/resultados');
+            const datos = await respuesta.json(); // {labels: [...], data: [...]}
+
+            // Si ya existía un gráfico, lo destruimos para volverlo a dibujar
+            if (miGrafico) {
+                miGrafico.destroy();
+            }
+
+            // Creamos el nuevo gráfico
+            miGrafico = new Chart(ctx, {
+                type: 'bar', // Tipo de gráfico: 'bar', 'pie', 'line', etc.
+                data: {
+                    labels: datos.labels, // Nombres de candidatos
+                    datasets: [{
+                        label: 'Número de Votos',
+                        data: datos.data, // Conteo de votos
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.5)',
+                            'rgba(54, 162, 235, 0.5)',
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { // Forzar a que solo haya números enteros en el eje Y
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Conectamos el botón
+        btnActualizarGrafico.addEventListener('click', dibujarGrafico);
+
+        // También dibujamos el gráfico una vez apenas carga la página
+        document.addEventListener('DOMContentLoaded', dibujarGrafico);
+
+    </script>
+</body>
+</html>
