@@ -1,88 +1,364 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votación FIEE 2025</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <title>Sistema de Votación</title>
     <style>
-        /* ... (todo el <style> se queda igual) ... */
-        /* Añadimos un estilo para el gráfico */
-        .contenedor-grafico { max-height: 400px; margin-top: 30px; }
+        :root {
+            --color-primario: #3498db;
+            --color-secundario: #2ecc71;
+            --color-error: #e74c3c;
+            --color-fondo: #f4f7f6;
+            --color-texto: #333;
+            --color-blanco: #ffffff;
+            --sombra: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-secundario) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .contenedor {
+            background: var(--color-blanco);
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: var(--sombra);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            /* Transición suave al cambiar de tamaño */
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            color: var(--color-primario);
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: var(--color-texto);
+            border-bottom: 2px solid var(--color-fondo);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .paso {
+            margin-bottom: 25px;
+        }
+
+        /* Clase para ocultar y mostrar pasos */
+        .oculto {
+            display: none;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        input[type="email"], input[type="text"] {
+            width: 95%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s ease;
+        }
+        input[type="email"]:focus, input[type="text"]:focus {
+            border-color: var(--color-primario);
+            outline: none;
+        }
+
+        button {
+            background-color: var(--color-primario);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s ease, background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+            transform: scale(1.02);
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        /* Estilos para los candidatos */
+        .opcion-candidato {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .opcion-candidato:hover {
+            border-color: var(--color-primario);
+        }
+        .opcion-candidato input[type="radio"] {
+            margin-right: 15px;
+            width: auto;
+            /* Hacer el radio button más grande y moderno */
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--color-primario);
+            border-radius: 50%;
+            position: relative;
+        }
+        .opcion-candidato input[type="radio"]:checked::before {
+            content: '';
+            display: block;
+            width: 12px;
+            height: 12px;
+            background-color: var(--color-primario);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .opcion-candidato label {
+            margin: 0;
+            font-weight: 400;
+            width: 100%;
+        }
+
+        /* Mensajes de feedback */
+        .mensaje {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 500;
+            display: none; /* Ocultos por defecto */
+        }
+        .error {
+            background: #f8d7da;
+            color: var(--color-error);
+        }
+        .exito {
+            background: #d4edda;
+            color: var(--color-secundario);
+        }
+        
+        /* Gráfico */
+        .contenedor-grafico {
+            max-height: 350px;
+            margin-top: 20px;
+        }
+
     </style>
 </head>
 <body>
-    <div class="contenedor">
-        <h1>{{ titulo_eleccion }}</h1>
 
-        <div class="paso">
+    <div class="contenedor">
+        <h1>🗳️ {{ titulo_eleccion }} 🗳️</h1>
+
+        <div class="paso" id="paso-1">
+            <h2>Paso 1: Identifícate</h2>
+            <label for="correo-input">Tu correo institucional (@uni.pe):</label>
+            <input type="email" id="correo-input" placeholder="tu.nombre@uni.pe">
+            <button id="btn-registrar">Recibir Código de Votación</button>
+            <div id="mensaje-registro" class="mensaje"></div>
+        </div>
+
+        <div class="paso oculto" id="paso-2">
+            <h2>Paso 2: Verifica y Vota</h2>
+            <p>¡Revisa tu correo! Te enviamos un código.</p>
+            <label for="codigo-input">Código de 6 dígitos:</label>
+            <input type="text" id="codigo-input" placeholder="123456" maxlength="6">
+            
+            <p><strong>Elige tu delegado:</strong></p>
+            
+            {% for candidato in lista_candidatos %}
+            <div class="opcion-candidato" onclick="document.getElementById('c-{{ candidato.id_candidato }}').checked = true;">
+                <input type="radio" name="candidato" id="c-{{ candidato.id_candidato }}" value="{{ candidato.id_candidato }}">
+                <label for="c-{{ candidato.id_candidato }}">
+                    {{ candidato.nombre }} ({{ candidato.partido }})
+                </label>
+            </div>
+            {% endfor %}
+            
+            <button id="btn-votar">¡VOTAR AHORA!</button>
+            <div id="mensaje-voto" class="mensaje"></div>
+        </div>
+
+        <div class="paso oculto" id="paso-3">
             <h2>Resultados en Vivo</h2>
-            <button id="btn-actualizar-grafico">Actualizar Gráfico</button>
             <div class="contenedor-grafico">
                 <canvas id="grafico-votacion"></canvas>
             </div>
+            <p style="margin-top: 20px;">¡Gracias por participar!</p>
         </div>
+
     </div>
 
     <script>
-        // ... (todo el JavaScript de antes se queda igual) ...
-        // (btnRegistrar, btnVotar, inputCorreo, etc.)
+        // --- SELECCIONAMOS LOS ELEMENTOS ---
+        const paso1 = document.getElementById('paso-1');
+        const paso2 = document.getElementById('paso-2');
+        const paso3 = document.getElementById('paso-3');
+
+        const btnRegistrar = document.getElementById('btn-registrar');
+        const btnVotar = document.getElementById('btn-votar');
         
-        // --- CÓDIGO NUEVO PARA EL GRÁFICO ---
+        const inputCorreo = document.getElementById('correo-input');
+        const inputCodigo = document.getElementById('codigo-input');
         
-        const btnActualizarGrafico = document.getElementById('btn-actualizar-grafico');
+        const msgRegistro = document.getElementById('mensaje-registro');
+        const msgVoto = document.getElementById('mensaje-voto');
+        
         const ctx = document.getElementById('grafico-votacion').getContext('2d');
         let miGrafico; // Variable para guardar nuestro gráfico
 
-        // Función para pedir los datos al backend y dibujar
+        // --- FUNCIÓN PARA MOSTRAR MENSAJES ---
+        function mostrarMensaje(elemento, mensaje, esError) {
+            elemento.textContent = mensaje;
+            elemento.className = esError ? 'mensaje error' : 'mensaje exito';
+            elemento.style.display = 'block';
+        }
+
+        // --- LÓGICA DE REGISTRO (PASO 1) ---
+        btnRegistrar.addEventListener('click', async () => {
+            const correo = inputCorreo.value;
+            
+            // Mensaje de espera
+            mostrarMensaje(msgRegistro, 'Enviando código...', false);
+            btnRegistrar.disabled = true;
+
+            const respuesta = await fetch('/api/registrar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 'correo': correo })
+            });
+            
+            const datos = await respuesta.json();
+            
+            if (respuesta.ok) { // Éxito
+                mostrarMensaje(msgRegistro, datos.mensaje, false);
+                // ¡AQUÍ LA MAGIA! Ocultamos Paso 1 y mostramos Paso 2
+                setTimeout(() => { // Damos tiempo para que lea el mensaje
+                    paso1.classList.add('oculto');
+                    paso2.classList.remove('oculto');
+                }, 1000); // 1 segundo de espera
+            } else { // Error
+                mostrarMensaje(msgRegistro, datos.mensaje, true);
+                btnRegistrar.disabled = false;
+            }
+        });
+
+        // --- LÓGICA DE VOTACIÓN (PASO 2) ---
+        btnVotar.addEventListener('click', async () => {
+            const codigo = inputCodigo.value;
+            const candidatoSeleccionado = document.querySelector('input[name="candidato"]:checked');
+            
+            if (!candidatoSeleccionado) {
+                mostrarMensaje(msgVoto, "Error: Debes seleccionar un candidato.", true);
+                return;
+            }
+            if (!codigo) {
+                mostrarMensaje(msgVoto, "Error: Debes ingresar tu código.", true);
+                return;
+            }
+
+            const candidato_id = candidatoSeleccionado.value;
+
+            const respuesta = await fetch('/api/votar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    'codigo': codigo,
+                    'candidato_id': candidato_id
+                })
+            });
+            
+            const datos = await respuesta.json();
+            
+            if (respuesta.ok) { // Éxito al votar
+                mostrarMensaje(msgVoto, datos.mensaje, false);
+                // ¡MAGIA! Ocultamos Paso 2 y mostramos Paso 3 (resultados)
+                setTimeout(() => {
+                    paso2.classList.add('oculto');
+                    paso3.classList.remove('oculto');
+                    // Dibujamos el gráfico con el nuevo voto
+                    dibujarGrafico();
+                }, 1000);
+            } else { // Error al votar
+                mostrarMensaje(msgVoto, datos.mensaje, true);
+            }
+        });
+
+        // --- LÓGICA DE GRÁFICOS (PASO 3) ---
         async function dibujarGrafico() {
-            // Pedimos los datos a la nueva API
             const respuesta = await fetch('/api/resultados');
             const datos = await respuesta.json(); // {labels: [...], data: [...]}
 
-            // Si ya existía un gráfico, lo destruimos para volverlo a dibujar
             if (miGrafico) {
                 miGrafico.destroy();
             }
 
-            // Creamos el nuevo gráfico
             miGrafico = new Chart(ctx, {
-                type: 'bar', // Tipo de gráfico: 'bar', 'pie', 'line', etc.
+                // Cambiamos a gráfico de Pie (pastel)
+                type: 'pie',
                 data: {
-                    labels: datos.labels, // Nombres de candidatos
+                    labels: datos.labels, // Nombres (Abdel, Angelo)
                     datasets: [{
-                        label: 'Número de Votos',
-                        data: datos.data, // Conteo de votos
+                        label: 'Votos',
+                        data: datos.data, // Números
                         backgroundColor: [
-                            'rgba(255, 99, 132, 0.5)',
-                            'rgba(54, 162, 235, 0.5)',
+                            'rgba(52, 152, 219, 0.7)', // Azul para Abdel
+                            'rgba(46, 204, 113, 0.7)', // Verde para Angelo
                         ],
                         borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(46, 204, 113, 1)',
                         ],
-                        borderWidth: 1
+                        borderWidth: 2
                     }]
                 },
                 options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { // Forzar a que solo haya números enteros en el eje Y
-                                stepSize: 1
-                            }
-                        }
-                    },
                     responsive: true,
-                    maintainAspectRatio: false
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Conteo de Votos Actual'
+                        }
+                    }
                 }
             });
         }
-
-        // Conectamos el botón
-        btnActualizarGrafico.addEventListener('click', dibujarGrafico);
-
-        // También dibujamos el gráfico una vez apenas carga la página
-        document.addEventListener('DOMContentLoaded', dibujarGrafico);
+        
+        // Cargamos el gráfico (vacío) al iniciar, por si alguien quiere ver
+        // los resultados antes de votar (o si ya votó).
+        // (Nota: Para un sistema real, querrías bloquear esto)
+        dibujarGrafico();
 
     </script>
 </body>

@@ -36,7 +36,8 @@ class Eleccion:
         self.candidatos.append(candidato)
 
     def obtener_candidatos(self):
-        """Devuelve la lista de candidatos."""
+        # PROBABLE ERROR AQUÍ
+        # Si aquí tienes "return ...", cámbialo por la línea correcta:
         return self.candidatos
 
 class Voto:

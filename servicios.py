@@ -1,17 +1,18 @@
 # servicios.py
 
 from modelos import Votante, Voto
+import os  
 import random
 import smtplib  # Para enviar correos
 import ssl      # Para la conexión segura
-import os       # (Opcional, para seguridad)
+     # (Opcional, para seguridad)
 
 # --- TU EMAIL Y CONTRASEÑA ---
 # !! NO SUBAS ESTO A GITHUB CON TU CONTRASEÑA ESCRITA AQUÍ !!
 # (Forma segura es usar variables de entorno)
 # (Forma insegura pero rápida para probar:)
-EMAIL_EMISOR = "floresrivasabdeljose@gmail.com"
-PASSWORD_EMISOR = "jqux fdvs nxtc whru"  # La contraseña de 16 letras que generaste
+EMAIL_EMISOR = os.environ.get('GMAIL_EMAIL')
+PASSWORD_EMISOR = os.environ.get('GMAIL_PASSWORD')  # La contraseña de 16 letras que generaste
 
 class AuthService:
     # ... (Esta clase no cambia, la dejamos igual) ...
@@ -31,31 +32,42 @@ class AuthService:
 
 class EmailService:
     """
-    ENVÍA UN CORREO REAL usando el servidor SMTP de Gmail.
+    ENVÍA UN CORREO REAL (Versión Plan C - Saltando verificación SSL)
     """
     def enviar_codigo_verificacion(self, votante_obj):
         codigo = str(random.randint(100000, 999999))
         votante_obj.codigo_verificacion = codigo
         
-        # --- Lógica de envío de correo ---
-        contexto_ssl = ssl.create_default_context()
+        # --- ¡¡CAMBIO IMPORTANTE AQUÍ!! ---
+        # Le decimos a SSL que NO verifique los certificados.
+        # Esto soluciona el error 'CERTIFICATE_VERIFY_FAILED' en algunas PC Windows.
+        # Es menos seguro, pero bueno para desarrollo.
+        contexto_ssl = ssl._create_unverified_context()
+        # ------------------------------------
+
         servidor_smtp = "smtp.gmail.com"
-        puerto = 465  # Para SSL
+        puerto = 587  # Puerto para STARTTLS
 
         asunto = "Tu Código de Votación Institucional"
         cuerpo_mensaje = f"Hola,\n\nTu código para votar es: {codigo}\n\nGracias."
         
-        # Formateamos el email (necesario para que los acentos y la 'ñ' salgan bien)
         mensaje_completo = f"Subject: {asunto}\n\n{cuerpo_mensaje}".encode('utf-8')
         
         try:
-            with smtplib.SMTP_SSL(servidor_smtp, puerto, context=contexto_ssl) as servidor:
-                servidor.login(EMAIL_EMISOR, PASSWORD_EMISOR)
-                print(f"Enviando correo real a: {votante_obj.correo_uni}")
-                servidor.sendmail(EMAIL_EMISOR, votante_obj.correo_uni, mensaje_completo)
+            servidor = smtplib.SMTP(servidor_smtp, puerto)
+            servidor.starttls(context=contexto_ssl) # Usamos el contexto no verificado
+            servidor.login(EMAIL_EMISOR, PASSWORD_EMISOR)
+            
+            print(f"Enviando correo real (vía STARTTLS) a: {votante_obj.correo_uni}")
+            servidor.sendmail(EMAIL_EMISOR, votante_obj.correo_uni, mensaje_completo)
+            
+            servidor.quit()
+            print("Correo enviado exitosamente.")
             return True
+            
         except Exception as e:
-            print(f"ERROR al enviar correo: {e}")
+            # Imprimimos el error en la consola
+            print(f"ERROR al enviar correo (STARTTLS): {e}") 
             return False
 
 class VotacionService:
